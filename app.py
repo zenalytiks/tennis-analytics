@@ -5,7 +5,7 @@ from dash import html, dcc
 import callbacks
 from utils.components import create_navbar
 
-
+server = app.server
 
 app.layout = html.Div(
     [
