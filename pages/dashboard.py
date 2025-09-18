@@ -3,7 +3,7 @@ from dash import html, dcc
 import dash_bootstrap_components as dbc
 from utils.data_reader import read_data
 
-dash.register_page(__name__, path='/', name='Tennis Analytics')
+dash.register_page(__name__, path='/tennis-analytics', name='Tennis Analytics')
 
 
 df = read_data()
