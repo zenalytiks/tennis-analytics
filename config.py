@@ -11,6 +11,5 @@ app = dash.Dash(
     meta_tags=[
         {"name": "viewport", "content": "width=device-width, initial-scale=1"}
     ],
-    url_base_pathname='/tennis-analytics/',
     suppress_callback_exceptions=True
 )
