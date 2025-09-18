@@ -3,7 +3,7 @@ from dash import html, dcc
 import dash_bootstrap_components as dbc
 from utils.data_reader import read_data
 
-dash.register_page(__name__, path='/shot-placement', name='Tennis Analytics')
+dash.register_page(__name__, path='/', name='Tennis Analytics')
 
 
 df = read_data()
@@ -15,16 +15,16 @@ def layout():
     
     dbc.Row([
         dbc.Col([
-            html.Label("Select Player:", style={'fontWeight': 'bold', 'marginBottom': 10}),
+            html.Label("Select Player to Analyze:", style={'fontWeight': 'bold', 'marginBottom': 10, 'color': '#2E8B57'}),
             dcc.Dropdown(
-                id='player-dropdown',
-                options=[{'label': 'All Players', 'value': 'all'}] + 
-                        [{'label': player, 'value': player} for player in df['Player'].unique()],
-                value='all',
+                id='player-perspective',
+                options=[{'label': player, 'value': player} 
+                        for player in df['Player'].unique()],
+                value=df['Player'].unique()[0],
                 style={'marginBottom': 20}
             ),
             
-            html.Label("Select Stroke Type:", style={'fontWeight': 'bold', 'marginBottom': 10}),
+            html.Label("Filter by Stroke Type:", style={'fontWeight': 'bold', 'marginBottom': 10, 'color': '#2E8B57'}),
             dcc.Dropdown(
                 id='stroke-dropdown',
                 options=[{'label': 'All Strokes', 'value': 'all'}] + 
@@ -33,29 +33,65 @@ def layout():
                 style={'marginBottom': 20}
             ),
             
-            html.Label("Color By:", style={'fontWeight': 'bold', 'marginBottom': 10}),
-            dcc.RadioItems(
-                id='color-by',
-                options=[
-                    {'label': 'Player', 'value': 'Player'},
-                    {'label': 'Direction', 'value': 'Direction'},
-                    {'label': 'Result', 'value': 'Result'}
-                ],
-                value='Player',
+            html.Label("Filter by Shot Type:", style={'fontWeight': 'bold', 'marginBottom': 10, 'color': '#2E8B57'}),
+            dcc.Dropdown(
+                id='shot-type-dropdown',
+                options=[{'label': 'All Shot Types', 'value': 'all'}] + 
+                        [{'label': shot_type, 'value': shot_type} for shot_type in df['Type'].unique()],
+                value='all',
                 style={'marginBottom': 20}
             ),
             
-            html.Label("Shot Result:", style={'fontWeight': 'bold', 'marginBottom': 10}),
+            html.Label("Color By:", style={'fontWeight': 'bold', 'marginBottom': 10, 'color': '#2E8B57'}),
+            dcc.RadioItems(
+                id='color-by',
+                options=[
+                    {'label': 'Stroke', 'value': 'Stroke'},
+                    {'label': 'Direction', 'value': 'Direction'},
+                    {'label': 'Result', 'value': 'Result'}
+                ],
+                value='Stroke',
+                style={'marginBottom': 20}
+            ),
+            
+            html.Label("Shot Result:", style={'fontWeight': 'bold', 'marginBottom': 10, 'color': '#2E8B57'}),
             dcc.Checklist(
                 id='result-filter',
                 options=[{'label': result, 'value': result} for result in df['Result'].unique()],
                 value=df['Result'].unique().tolist(),
                 style={'marginBottom': 20}
-            )
+            ),
+            
+            html.Div([
+                html.H4("Legend:", style={'color': '#2E8B57', 'marginBottom': 10}),
+                html.P("● Circle = In", style={'color': 'green', 'margin': '2px 0'}),
+                html.P("✕ X-mark = Out", style={'color': 'red', 'margin': '2px 0'}),
+                html.P("▲ Triangle = Net", style={'color': 'orange', 'margin': '2px 0'}),
+                html.P("Size = Ball Speed", style={'color': 'gray', 'margin': '2px 0', 'fontSize': '12px'}),
+                # html.Hr(style={'margin': '10px 0'}),
+                # html.H5("Court Orientation:", style={'color': '#2E8B57', 'margin': '5px 0'}),
+                # html.P("Kamran Khan: Net↓ Baseline↑", style={'fontSize': '11px', 'margin': '2px 0'}),
+                # html.P("Alex MacDonald: Net↑ Baseline↓", style={'fontSize': '11px', 'margin': '2px 0'}),
+                # html.Hr(style={'margin': '10px 0'}),
+                # html.H5("Zones:", style={'color': '#2E8B57', 'margin': '5px 0'}),
+                # html.P("6 Vertical Zones", style={'fontSize': '11px', 'margin': '2px 0'}),
+                # html.P("2 Depth Zones (Short/Deep)", style={'fontSize': '11px', 'margin': '2px 0'})
+            ], style={'backgroundColor': 'rgba(255,255,255,0.1)', 'padding': '10px', 'borderRadius': '5px'})
+            # html.Label("Court View:", style={'fontWeight': 'bold', 'marginBottom': 10}),
+            # dcc.RadioItems(
+            #     id='court-side',
+            #     options=[
+            #         {'label': 'Near Side (Baseline)', 'value': 'near'},
+            #         {'label': 'Far Side (Net)', 'value': 'far'},
+            #         {'label': 'Both Sides', 'value': 'both'}
+            #     ],
+            #     value='near',
+            #     style={'marginBottom': 20}
+            # )
         ],md=2),
         
         dbc.Col([
-            dcc.Graph(id='tennis-court')
+            dcc.Graph(id='tennis-court-half')
         ],md=10, className="shadow p-0 mb-5 bg-white rounded border-light")
     ]),
     
