@@ -1,0 +1,19 @@
+.tennis-court p {
+    color: darkgray;
+}
+
+.tennis-court .btn {
+    border-radius: 50%;
+    background-color: darkgray;
+    border: none;
+    height: 50px;
+    width: 50px;
+}
+
+.form-check-input {
+    display: none;
+}
+
+.form-check-label {
+    cursor: pointer;
+}

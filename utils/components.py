@@ -20,4 +20,6 @@ def create_navbar():
         brand_href="#",
         color="#2E8B57",
         dark=True,
+        fluid=True,
+        className='px-4'
     )

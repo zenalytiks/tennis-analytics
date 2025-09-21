@@ -5,119 +5,185 @@ from utils.data_reader import read_data
 
 dash.register_page(__name__, path='/', name='Tennis Analytics')
 
-
 df = read_data()
+
+# Define stroke colors for consistency
+STROKE_COLORS = {
+    'Forehand': '#FF6B6B',
+    'Backhand': '#4ECDC4', 
+    'Serve': '#45B7D1',
+    'Return': '#96CEB4',
+    'Volley': '#FFEAA7',
+    'Smash': '#DDA0DD'
+}
+
+def create_stroke_checklist():
+    """Create colored stroke checklist items"""
+    stroke_options = []
+    for stroke in df['Stroke'].unique():
+        color = STROKE_COLORS.get(stroke, '#6C757D')
+        stroke_options.append({
+            'label': html.Span([
+                html.Span('●', style={'color': color, 'fontSize': '16px', 'marginRight': '8px'}),
+                stroke
+            ], style={'display': 'flex', 'alignItems': 'center'}),
+            'value': stroke
+        })
+    return stroke_options
+
+def create_result_checklist():
+    """Create result checklist with markers and colors"""
+    result_markers = {
+        'In': {'symbol': '●', 'color': '#28a745'},
+        'Out': {'symbol': '✕', 'color': '#dc3545'}, 
+        'Net': {'symbol': '▲', 'color': '#fd7e14'}
+    }
+    
+    result_options = []
+    for result in df['Result'].unique():
+        marker_info = result_markers.get(result, {'symbol': '●', 'color': '#6C757D'})
+        result_options.append({
+            'label': html.Span([
+                html.Span(marker_info['symbol'], 
+                         style={'color': marker_info['color'], 'fontSize': '14px', 'marginRight': '8px', 'fontWeight': 'bold'}),
+                result
+            ], style={'display': 'flex', 'alignItems': 'center'}),
+            'value': result
+        })
+    return result_options
 
 def layout(): 
     return dbc.Container([
-    html.H1("Tennis Court Shot Placement Analytics", 
-           style={'textAlign': 'center', 'color': '#2E8B57', 'marginBottom': 30}),
-    
-    dbc.Row([
-        dbc.Col([
-            html.Label("Select Player to Analyze:", style={'fontWeight': 'bold', 'marginBottom': 10, 'color': '#2E8B57'}),
-            dcc.Dropdown(
-                id='player-perspective',
-                options=[{'label': player, 'value': player} 
-                        for player in df['Player'].unique()],
-                value=df['Player'].unique()[0],
-                style={'marginBottom': 20}
-            ),
-            
-            html.Label("Filter by Stroke Type:", style={'fontWeight': 'bold', 'marginBottom': 10, 'color': '#2E8B57'}),
-            dcc.Dropdown(
-                id='stroke-dropdown',
-                options=[{'label': 'All Strokes', 'value': 'all'}] + 
-                        [{'label': stroke, 'value': stroke} for stroke in df['Stroke'].unique()],
-                value='all',
-                style={'marginBottom': 20}
-            ),
-            
-            html.Label("Filter by Shot Type:", style={'fontWeight': 'bold', 'marginBottom': 10, 'color': '#2E8B57'}),
-            dcc.Dropdown(
-                id='shot-type-dropdown',
-                options=[{'label': 'All Shot Types', 'value': 'all'}] + 
-                        [{'label': shot_type, 'value': shot_type} for shot_type in df['Type'].unique()],
-                value='all',
-                style={'marginBottom': 20}
-            ),
-            
-            html.Label("Color By:", style={'fontWeight': 'bold', 'marginBottom': 10, 'color': '#2E8B57'}),
-            dcc.RadioItems(
-                id='color-by',
-                options=[
-                    {'label': 'Stroke', 'value': 'Stroke'},
-                    {'label': 'Direction', 'value': 'Direction'},
-                    {'label': 'Result', 'value': 'Result'}
-                ],
-                value='Stroke',
-                style={'marginBottom': 20}
-            ),
-            
-            html.Label("Shot Result:", style={'fontWeight': 'bold', 'marginBottom': 10, 'color': '#2E8B57'}),
-            dcc.Checklist(
-                id='result-filter',
-                options=[{'label': result, 'value': result} for result in df['Result'].unique()],
-                value=df['Result'].unique().tolist(),
-                style={'marginBottom': 20}
-            ),
-            
-            html.Div([
-                html.H4("Legend:", style={'color': '#2E8B57', 'marginBottom': 10}),
-                html.P("● Circle = In", style={'color': 'green', 'margin': '2px 0'}),
-                html.P("✕ X-mark = Out", style={'color': 'red', 'margin': '2px 0'}),
-                html.P("▲ Triangle = Net", style={'color': 'orange', 'margin': '2px 0'}),
-                html.P("Size = Ball Speed", style={'color': 'gray', 'margin': '2px 0', 'fontSize': '12px'}),
-                # html.Hr(style={'margin': '10px 0'}),
-                # html.H5("Court Orientation:", style={'color': '#2E8B57', 'margin': '5px 0'}),
-                # html.P("Kamran Khan: Net↓ Baseline↑", style={'fontSize': '11px', 'margin': '2px 0'}),
-                # html.P("Alex MacDonald: Net↑ Baseline↓", style={'fontSize': '11px', 'margin': '2px 0'}),
-                # html.Hr(style={'margin': '10px 0'}),
-                # html.H5("Zones:", style={'color': '#2E8B57', 'margin': '5px 0'}),
-                # html.P("6 Vertical Zones", style={'fontSize': '11px', 'margin': '2px 0'}),
-                # html.P("2 Depth Zones (Short/Deep)", style={'fontSize': '11px', 'margin': '2px 0'})
-            ], style={'backgroundColor': 'rgba(255,255,255,0.1)', 'padding': '10px', 'borderRadius': '5px'})
-            # html.Label("Court View:", style={'fontWeight': 'bold', 'marginBottom': 10}),
-            # dcc.RadioItems(
-            #     id='court-side',
-            #     options=[
-            #         {'label': 'Near Side (Baseline)', 'value': 'near'},
-            #         {'label': 'Far Side (Net)', 'value': 'far'},
-            #         {'label': 'Both Sides', 'value': 'both'}
-            #     ],
-            #     value='near',
-            #     style={'marginBottom': 20}
-            # )
-        ],md=2),
+        # Header
+        dbc.Row([
+            dbc.Col([
+                html.H1("Tennis Analytics Dashboard", 
+                       className="text-center mb-0",
+                       style={'color': '#2C3E50', 'fontWeight': '300', 'letterSpacing': '1px'}),
+                html.P("Shot placement and performance analysis", 
+                      className="text-center text-muted mb-4",
+                      style={'fontSize': '16px'})
+            ])
+        ]),
         
-        dbc.Col([
-            dcc.Graph(id='tennis-court-half')
-        ],md=10, className="shadow p-0 mb-5 bg-white rounded border-light")
-    ]),
-    
-    html.Hr(),
-    
-    dbc.Row([
-        dbc.Col([
-            html.Div([
-                dcc.Graph(id='depth-analysis')
-            ],className="shadow bg-white rounded border-light")
-            
-        ],md=6),
+        # Main Content
+        dbc.Row([
+            # Left Panel - Court Visualization
+            dbc.Col([
+                
+                dbc.Card([
+                    dbc.CardBody([
+                        dbc.Stack(
+                            [
+                                dbc.Button(
+                                    "".join([part[0].upper() for part in df['Player'].unique()[0].split()[:2]]),
+                                    value=df['Player'].unique()[0],
+                                    id='player-1'
+                                ),
+                                html.P("SHOT PLACEMENT", className='fw-bold fs-4 ms-auto'),
+                                dbc.Button(
+                                    "".join([part[0].upper() for part in df['Player'].unique()[1].split()[:2]]),
+                                    value=df['Player'].unique()[1],
+                                    className='ms-auto',
+                                    id='player-2'
+                                ),
+                            ],
+                            direction="horizontal",
+                            className='p-3'
+                            # justify="between",
+                        ),
+                        dcc.Graph(id='tennis-court-half'),
+                        # Stroke Type Selection  
+                        html.Div([
+                            html.Label("Stroke Types", className="form-label text-muted mb-2", style={'fontSize': '14px', 'fontWeight': '600'}),
+                            dbc.Checklist(
+                                id='stroke-dropdown',
+                                options=create_stroke_checklist(),
+                                value=df['Stroke'].unique().tolist(),
+                                inline=True,
+                                className="mb-3"
+                            )
+                        ]),
+                        
+                        html.Hr(className="my-3"),
+                        
+                        # Shot Result Selection
+                        html.Div([
+                            html.Label("Shot Results", className="form-label text-muted mb-2", style={'fontSize': '14px', 'fontWeight': '600'}),
+                            dbc.Checklist(
+                                id='result-filter',
+                                options=create_result_checklist(),
+                                value=df['Result'].unique().tolist(),
+                                inline=True,
+                                className="mb-3"
+                            )
+                        ]),
+                        
+                        html.Hr(className="my-3"),
         
-        dbc.Col([
-            html.Div([
-                dcc.Graph(id='direction-analysis') 
-            ],className="shadow bg-white rounded border-light")
-             
-        ],md=6,className='mb-3'),
-    ]),
-    dbc.Row([
-        dbc.Col([
-            html.Div([
-                dcc.Graph(id='speed-analysis')
-            ],className="shadow bg-white rounded border-light")
+                        # Info Panel
+                        html.Div([
+                            html.Small([
+                                html.Strong("Visualization Info:", className="text-muted"),
+                                html.Br(),
+                                "• Marker size = Ball speed",
+                                html.Br(), 
+                                "• Colors represent stroke types",
+                                html.Br(),
+                                "• Markers show shot results"
+                            ], className="text-muted", style={'lineHeight': '1.4'})
+                        ], className="mt-3 p-2 bg-light rounded")
+                    ], className="p-2")
+                ], className="tennis-court shadow-sm border-0 mb-4"),
+                
+            ], md=6),
             
-        ],md=12, className='')
-    ])
-],className='mt-5 mb-5')
+            # Right Panel - Analysis Charts
+            dbc.Col([
+                # Top Row - Two smaller charts
+                dbc.Row([
+                    dbc.Col([
+                        dbc.Card([
+                            dbc.CardHeader([
+                                html.H6("Depth Analysis", className="mb-0 text-muted")
+                            ], className="bg-white border-0 py-2"),
+                            dbc.CardBody([
+                                dcc.Graph(id='depth-analysis')
+                            ], className="p-2")
+                        ], className="shadow-sm border-0 mb-3")
+                    ], md=6),
+                    
+                    dbc.Col([
+                        dbc.Card([
+                            dbc.CardHeader([
+                                html.H6("Direction Analysis", className="mb-0 text-muted")
+                            ], className="bg-white border-0 py-2"),
+                            dbc.CardBody([
+                                dcc.Graph(id='direction-analysis')
+                            ], className="p-2")
+                        ], className="shadow-sm border-0 mb-3")
+                    ], md=6)
+                ]),
+                
+                # Bottom Row - Speed analysis
+                dbc.Row([
+                    dbc.Col([
+                        dbc.Card([
+                            dbc.CardHeader([
+                                html.H6("Speed Analysis", className="mb-0 text-muted")
+                            ], className="bg-white border-0 py-2"),
+                            dbc.CardBody([
+                                dcc.Graph(id='speed-analysis')
+                            ], className="p-2")
+                        ], className="shadow-sm border-0")
+                    ], md=12)
+                ])
+            ], md=6)
+        ]),
+        
+        # Hidden components to maintain compatibility
+            dcc.Store(id='shot-type-dropdown', data='all'),  # Hidden store for shot type (always 'all')
+            dcc.Store(id='color-by', data='Stroke'),  # Hidden store for color by (always 'Stroke')
+            dcc.Store(id='player-store')
+        
+    ], fluid=True, className="px-4 py-3")
