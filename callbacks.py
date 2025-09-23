@@ -1,7 +1,8 @@
 from dash import Input, Output, callback, State, callback_context
 import plotly.graph_objects as go
 import plotly.express as px
-from utils.graphs import create_tennis_court_half, add_shot_data_half_court, create_placement_analysis, create_speed_analysis
+import numpy as np
+from utils.graphs import create_tennis_court_shapes, add_shot_data, create_placement_analysis, create_speed_analysis, COURT_LENGTH
 from utils.data_reader import read_data
 
 df = read_data()
@@ -57,6 +58,25 @@ def update_charts(selected_strokes, selected_results, selected_player):
     player_perspective = selected_player['player_perspective']
     # Filter data to show only the selected player's shots
     filtered_df = df[df['Player'] == player_perspective].copy()
+
+    filtered_df['Bounce (y)'] = filtered_df['Bounce (y)'].apply(lambda y: COURT_LENGTH if y > COURT_LENGTH else y)
+
+    # Condition for "Out" or y beyond the court
+    # condition = (filtered_df['Result'] == 'Out') & (filtered_df['Bounce (y)'] > COURT_LENGTH)
+
+    # condition2 = filtered_df['Bounce (y)'] > COURT_LENGTH
+    
+    # Update Bounce (y)
+    
+
+    # filtered_df['Bounce (y)'] = np.where(condition2, filtered_df['Bounce (y)'] - COURT_LENGTH, filtered_df['Bounce (y)'])
+
+    # filtered_df['Bounce (y)'] = np.where(condition, COURT_LENGTH, filtered_df['Bounce (y)'])
+    
+    # Update Bounce (x) only for the "else" case
+    # filtered_df['Bounce (y)'] = np.where(condition, 
+    #                                      filtered_df['Bounce (y)'], 
+    #                                      filtered_df['Bounce (y)'] - COURT_LENGTH)
     
     # Filter by selected strokes
     if selected_strokes and len(selected_strokes) < len(df['Stroke'].unique()):
@@ -68,11 +88,23 @@ def update_charts(selected_strokes, selected_results, selected_player):
     
     # Shot type is always 'all' in the new design - no filtering needed
     # Color by is always 'Stroke' in the new design
-    color_by = 'Stroke'
+    # color_by = 'Stroke'
     
     # Create court visualization for single player
-    court_fig = create_tennis_court_half(player_perspective)
-    court_fig = add_shot_data_half_court(court_fig, filtered_df, player_perspective, color_by=color_by)
+    shapes,annotations = create_tennis_court_shapes()
+
+    court_fig = go.Figure(data=[],layout=go.Layout(
+        shapes=shapes,
+        annotations=annotations,
+        plot_bgcolor='#ffffff',
+        paper_bgcolor='#ffffff',
+        xaxis=dict(showgrid=False, zeroline=False, visible=False),
+        yaxis=dict(showgrid=False, zeroline=False, visible=False),
+        height=600,
+        # width=800,
+        margin=dict(l=0, r=0, t=0, b=0)
+    ))
+    court_fig = add_shot_data(court_fig, filtered_df, df)
     
     # Create analysis charts
     depth_fig, direction_fig = create_placement_analysis(filtered_df)
