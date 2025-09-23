@@ -51,49 +51,55 @@ def update_player_click(n_click_player_1, n_click_player_2, player1, player2):
      Input('player-store','data')],
      prevent_initial_call=True
 )
+# Replace this section in your callbacks.py update_charts function
+
 def update_charts(selected_strokes, selected_results, selected_player):
     """
     Updated callback to handle single player perspective and modern UI controls
     """
     player_perspective = selected_player['player_perspective']
     # Filter data to show only the selected player's shots
-    filtered_df = df[df['Player'] == player_perspective].copy()
+    filtered_df = df[(df['Player'] == player_perspective) & (~df['Stroke'].isin(['Feed','Serve']))].copy()
 
-    filtered_df['Bounce (y)'] = filtered_df['Bounce (y)'].apply(lambda y: COURT_LENGTH if y > COURT_LENGTH else y)
-
-    # Condition for "Out" or y beyond the court
-    # condition = (filtered_df['Result'] == 'Out') & (filtered_df['Bounce (y)'] > COURT_LENGTH)
-
-    # condition2 = filtered_df['Bounce (y)'] > COURT_LENGTH
+    # PROPER PERSPECTIVE TRANSFORMATION
+    # Transform coordinates to show receiving player's perspective
+    def transform_to_player_perspective(row):
+        x, y, result = row['Bounce (x)'], row['Bounce (y)'], row['Result']
+        
+        # Handle net shots - clamp them to the net line
+        if result == 'Net':
+            return x, COURT_LENGTH  # Place all net shots at the net line
+        
+        # If shot is on the opposite side of the net (y > COURT_LENGTH)
+        if y > COURT_LENGTH:
+            # Transform both coordinates for proper perspective
+            new_x = -x  # Mirror across center line
+            new_y = (2 * COURT_LENGTH) - y  # Flip across net line
+            
+            # DON'T clamp - let shots go beyond baseline if they were deep on opponent's side
+            # This preserves the true perspective of how deep/short the shot appeared
+            
+            return new_x, new_y
+        else:
+            # Shot is already on player's side, no transformation needed
+            return x, y
     
-    # Update Bounce (y)
+    # Apply transformation
+    transformed_coords = filtered_df.apply(transform_to_player_perspective, axis=1, result_type='expand')
+    filtered_df['Bounce (x)'] = transformed_coords[0]
+    filtered_df['Bounce (y)'] = transformed_coords[1]
     
-
-    # filtered_df['Bounce (y)'] = np.where(condition2, filtered_df['Bounce (y)'] - COURT_LENGTH, filtered_df['Bounce (y)'])
-
-    # filtered_df['Bounce (y)'] = np.where(condition, COURT_LENGTH, filtered_df['Bounce (y)'])
-    
-    # Update Bounce (x) only for the "else" case
-    # filtered_df['Bounce (y)'] = np.where(condition, 
-    #                                      filtered_df['Bounce (y)'], 
-    #                                      filtered_df['Bounce (y)'] - COURT_LENGTH)
-    
-    # Filter by selected strokes
+    # Rest of your existing filtering logic...
     if selected_strokes and len(selected_strokes) < len(df['Stroke'].unique()):
         filtered_df = filtered_df[filtered_df['Stroke'].isin(selected_strokes)]
     
-    # Filter by selected results  
     if selected_results and len(selected_results) > 0:
         filtered_df = filtered_df[filtered_df['Result'].isin(selected_results)]
     
-    # Shot type is always 'all' in the new design - no filtering needed
-    # Color by is always 'Stroke' in the new design
-    # color_by = 'Stroke'
+    # Create court visualization
+    shapes, annotations = create_tennis_court_shapes()
     
-    # Create court visualization for single player
-    shapes,annotations = create_tennis_court_shapes()
-
-    court_fig = go.Figure(data=[],layout=go.Layout(
+    court_fig = go.Figure(data=[], layout=go.Layout(
         shapes=shapes,
         annotations=annotations,
         plot_bgcolor='#ffffff',
@@ -101,7 +107,6 @@ def update_charts(selected_strokes, selected_results, selected_player):
         xaxis=dict(showgrid=False, zeroline=False, visible=False),
         yaxis=dict(showgrid=False, zeroline=False, visible=False),
         height=600,
-        # width=800,
         margin=dict(l=0, r=0, t=0, b=0)
     ))
     court_fig = add_shot_data(court_fig, filtered_df, df)
@@ -130,15 +135,6 @@ def update_stroke_options(selected_strokes):
     color_map = {val: colors[i % len(colors)] for i, val in enumerate(unique_vals)}
     df['color'] = df['Stroke'].map(color_map)
     
-    # Stroke colors for consistency
-    # STROKE_COLORS = {
-    #     'Forehand': '#FF6B6B',
-    #     'Backhand': '#4ECDC4', 
-    #     'Serve': '#45B7D1',
-    #     'Return': '#96CEB4',
-    #     'Volley': '#FFEAA7',
-    #     'Smash': '#DDA0DD'
-    # }
     
     options = []
     for stroke in df['Stroke'].unique():

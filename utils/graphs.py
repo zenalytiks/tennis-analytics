@@ -125,35 +125,21 @@ def add_shot_data(fig, filtered_df, df):
     
     # Color mapping
     colors = px.colors.qualitative.Set2
-    # if color_by == "Stroke":
     unique_vals = df['Stroke'].unique()
     color_map = {val: colors[i % len(colors)] for i, val in enumerate(unique_vals)}
     df['color'] = df['Stroke'].map(color_map)
 
-    # Calculate zone statistics
+    # Calculate zone statistics (only for shots within singles court)
     zone_counts = [0] * 3  # 3 zones
     depth_counts = {"short": 0, "deep": 0}  # 2 depth zones
     total_shots = 0
+    shots_in_analysis_area = 0  # For zone percentage calculations
 
-    # Add bounce points and calculate zone statistics
+    # Add bounce points - PLOT ALL SHOTS, not just those in singles court
     for _, row in filtered_df.iterrows():
-        # Transform coordinates using precise scaling
         court_x, court_y = row['Bounce (x)'], row['Bounce (y)']
         
-        # Determine which horizontal zone (0-2)
-        if -singles_width/2 <= court_x <= singles_width/2:  # Within singles court
-            zone_index = int((court_x - start_x) / zone_width)
-            zone_index = max(0, min(2, zone_index))  # Clamp to valid range
-            zone_counts[zone_index] += 1
-
-            if court_y <= service_line_y:
-                    depth_counts["deep"] += 1
-            else:
-                depth_counts["short"] += 1
-            
-            total_shots += 1
-        
-        # Determine marker size based on speed
+        # Plot ALL shots regardless of position
         marker_size = max(8, min(20, row['Speed (MPH)'] / 3))
         
         # Determine marker symbol based on result
@@ -164,6 +150,7 @@ def add_shot_data(fig, filtered_df, df):
         else:  # Net
             marker_symbol = 'triangle-up'
         
+        # Add trace for this shot
         fig.add_trace(go.Scatter(
             x=[court_x],
             y=[court_y],
@@ -171,7 +158,6 @@ def add_shot_data(fig, filtered_df, df):
             marker=dict(
                 size=12,
                 color=row['color'],
-                # symbol=marker_symbol,
                 line=dict(width=2, color='white'),
                 opacity=0.8
             ),
@@ -189,14 +175,34 @@ def add_shot_data(fig, filtered_df, df):
             ),
             showlegend=False
         ))
+        
+        total_shots += 1
+        
+        # Only count for zone analysis if within singles court bounds AND valid court length AND not a net shot
+        if (row['Result'] != 'Net' and 
+            -singles_width/2 <= court_x <= singles_width/2 and 
+            0 <= court_y <= COURT_LENGTH):
+            
+            # Determine which horizontal zone (0-2)
+            zone_index = int((court_x - start_x) / zone_width)
+            zone_index = max(0, min(2, zone_index))  # Clamp to valid range
+            zone_counts[zone_index] += 1
+
+            # Depth analysis
+            if court_y <= service_line_y:
+                depth_counts["deep"] += 1
+            else:
+                depth_counts["short"] += 1
+            
+            shots_in_analysis_area += 1
     
-    # Add updated zone percentages (3 zones)
+    # Add zone percentages (only for shots in analysis area)
     zone_labels_x = [start_x + (zone_width * (i + 0.5)) for i in range(3)]
     zone_names = ["Ad", "Center", "Deuce"]
     
-    if total_shots > 0:
+    if shots_in_analysis_area > 0:  # Use shots_in_analysis_area instead of total_shots
         for i, (x_pos, zone_name, count) in enumerate(zip(zone_labels_x, zone_names, zone_counts)):
-            percentage = (count / total_shots) * 100
+            percentage = (count / shots_in_analysis_area) * 100
             fig.add_annotation(
                 x=x_pos, 
                 y=COURT_LENGTH + 1.5, 
@@ -205,31 +211,31 @@ def add_shot_data(fig, filtered_df, df):
                 font=dict(color="darkgray", size=12, family="Arial Bold")
             )
         
-        # Add depth zone percentages - positioned relative to service line
-        short_y = service_line_y * 0.5  # Between net and service line
-        deep_y = service_line_y + (COURT_LENGTH - service_line_y) * 0.5  # Between service line and baseline
+        # Add depth zone percentages
+        short_y = service_line_y * 0.5
+        deep_y = service_line_y + (COURT_LENGTH - service_line_y) * 0.5
         
         fig.add_annotation(
             x=6, y=short_y,
-            text=f"{(depth_counts['short']/total_shots)*100:.1f}%",
+            text=f"{(depth_counts['short']/shots_in_analysis_area)*100:.1f}%",
             showarrow=False,
             font=dict(color="darkgray", size=12, family="Arial Bold")
         )
         
         fig.add_annotation(
             x=6, y=deep_y,
-            text=f"{(depth_counts['deep']/total_shots)*100:.1f}%",
+            text=f"{(depth_counts['deep']/shots_in_analysis_area)*100:.1f}%",
             showarrow=False,
             font=dict(color="darkgray", size=12, family="Arial Bold")
         )
-        
-        # Add total shots counter
-        fig.add_annotation(
-            x=-6, y=COURT_LENGTH + 1.5,
-            text=f"Total Shots: {total_shots}",
-            showarrow=False,
-            font=dict(color="darkgray", size=12, family="Arial Bold")
-        )
+    
+    # Show total shots (all shots) and analysis shots separately
+    # fig.add_annotation(
+    #     x=-6, y=COURT_LENGTH + 1.5,
+    #     text=f"Total: {total_shots} | Analysis: {shots_in_analysis_area}",
+    #     showarrow=False,
+    #     font=dict(color="darkgray", size=12, family="Arial Bold")
+    # )
 
     return fig
 

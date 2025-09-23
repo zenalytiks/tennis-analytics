@@ -7,6 +7,8 @@ dash.register_page(__name__, path='/', name='Tennis Analytics')
 
 df = read_data()
 
+df = df[~df['Stroke'].isin(['Feed','Serve'])]
+
 # Define stroke colors for consistency
 STROKE_COLORS = {
     'Forehand': '#FF6B6B',
