@@ -189,7 +189,7 @@ def add_shot_data(fig, filtered_df, df):
             zone_counts[zone_index] += 1
 
             # Depth analysis
-            if court_y <= service_line_y:
+            if court_y >= service_line_y:
                 depth_counts["deep"] += 1
             else:
                 depth_counts["short"] += 1
