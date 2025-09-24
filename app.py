@@ -1,7 +1,7 @@
 from config import app
 import dash
 import dash_bootstrap_components as dbc
-from dash import html, dcc
+from dash import html
 import callbacks
 from utils.components import create_navbar
 

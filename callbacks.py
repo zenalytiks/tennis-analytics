@@ -1,11 +1,12 @@
-from dash import Input, Output, callback, State, callback_context
+from dash import Input, Output, callback, callback_context
 import plotly.graph_objects as go
 import plotly.express as px
-import numpy as np
-from utils.graphs import create_tennis_court_shapes, add_shot_data, create_placement_analysis, create_speed_analysis, COURT_LENGTH
+from utils.graphs import create_tennis_court_shapes, add_shot_data, create_placement_analysis, create_speed_analysis, COURT_LENGTH, COURT_WIDTH
 from utils.data_reader import read_data
 
 df = read_data()
+
+df = df[~df['Stroke'].isin(['Feed','Serve'])]
 
 @callback(
     Output('player-store','data'),
@@ -104,8 +105,8 @@ def update_charts(selected_strokes, selected_results, selected_player):
         annotations=annotations,
         plot_bgcolor='#ffffff',
         paper_bgcolor='#ffffff',
-        xaxis=dict(showgrid=False, zeroline=False, visible=False),
-        yaxis=dict(showgrid=False, zeroline=False, visible=False),
+        xaxis=dict(range=[-8,8],showgrid=False, zeroline=False, visible=False),
+        yaxis=dict(range=[-5, COURT_LENGTH + 3],showgrid=False, zeroline=False, visible=False),
         height=600,
         margin=dict(l=0, r=0, t=0, b=0)
     ))
@@ -144,7 +145,6 @@ def update_stroke_options(selected_strokes):
         if selected_strokes and stroke in selected_strokes:
             label = html.Span([
                 html.Span('●', style={'color': color, 'fontSize': '24px', 'marginRight': '8px'}),
-                # html.Span('✓', style={'color': '#28a745', 'fontSize': '12px', 'marginRight': '4px'}),
                 stroke
             ], style={'display': 'flex', 'alignItems': 'center'})
         else:
@@ -184,7 +184,6 @@ def update_result_options(selected_results):
             label = html.Span([
                 html.Span(marker_info['symbol'], 
                          style={'color': marker_info['color'], 'fontSize': '14px', 'marginRight': '8px', 'fontWeight': 'bold'}),
-                # html.Span('✓', style={'color': '#28a745', 'fontSize': '12px', 'marginRight': '4px'}),
                 result
             ], style={'display': 'flex', 'alignItems': 'center'})
         else:

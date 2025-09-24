@@ -122,12 +122,6 @@ def create_tennis_court_shapes():
 def add_shot_data(fig, filtered_df, df):
     if filtered_df.empty:
         return fig
-    
-    # Color mapping
-    colors = px.colors.qualitative.Set2
-    unique_vals = df['Stroke'].unique()
-    color_map = {val: colors[i % len(colors)] for i, val in enumerate(unique_vals)}
-    df['color'] = df['Stroke'].map(color_map)
 
     # Calculate zone statistics (only for shots within singles court)
     zone_counts = [0] * 3  # 3 zones
@@ -156,7 +150,8 @@ def add_shot_data(fig, filtered_df, df):
             y=[court_y],
             mode='markers',
             marker=dict(
-                size=12,
+                size=marker_size,
+                symbol=marker_symbol,
                 color=row['color'],
                 line=dict(width=2, color='white'),
                 opacity=0.8
@@ -216,26 +211,18 @@ def add_shot_data(fig, filtered_df, df):
         deep_y = service_line_y + (COURT_LENGTH - service_line_y) * 0.5
         
         fig.add_annotation(
-            x=6, y=short_y,
+            x=6.5, y=short_y,
             text=f"{(depth_counts['short']/shots_in_analysis_area)*100:.1f}%",
             showarrow=False,
             font=dict(color="darkgray", size=12, family="Arial Bold")
         )
         
         fig.add_annotation(
-            x=6, y=deep_y,
+            x=6.5, y=deep_y,
             text=f"{(depth_counts['deep']/shots_in_analysis_area)*100:.1f}%",
             showarrow=False,
             font=dict(color="darkgray", size=12, family="Arial Bold")
         )
-    
-    # Show total shots (all shots) and analysis shots separately
-    # fig.add_annotation(
-    #     x=-6, y=COURT_LENGTH + 1.5,
-    #     text=f"Total: {total_shots} | Analysis: {shots_in_analysis_area}",
-    #     showarrow=False,
-    #     font=dict(color="darkgray", size=12, family="Arial Bold")
-    # )
 
     return fig
 

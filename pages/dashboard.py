@@ -7,52 +7,8 @@ dash.register_page(__name__, path='/', name='Tennis Analytics')
 
 df = read_data()
 
-df = df[~df['Stroke'].isin(['Feed','Serve'])]
-
-# Define stroke colors for consistency
-STROKE_COLORS = {
-    'Forehand': '#FF6B6B',
-    'Backhand': '#4ECDC4', 
-    'Serve': '#45B7D1',
-    'Return': '#96CEB4',
-    'Volley': '#FFEAA7',
-    'Smash': '#DDA0DD'
-}
-
-def create_stroke_checklist():
-    """Create colored stroke checklist items"""
-    stroke_options = []
-    for stroke in df['Stroke'].unique():
-        color = STROKE_COLORS.get(stroke, '#6C757D')
-        stroke_options.append({
-            'label': html.Span([
-                html.Span('●', style={'color': color, 'fontSize': '16px', 'marginRight': '8px'}),
-                stroke
-            ], style={'display': 'flex', 'alignItems': 'center'}),
-            'value': stroke
-        })
-    return stroke_options
-
-def create_result_checklist():
-    """Create result checklist with markers and colors"""
-    result_markers = {
-        'In': {'symbol': '●', 'color': '#28a745'},
-        'Out': {'symbol': '✕', 'color': '#dc3545'}, 
-        'Net': {'symbol': '▲', 'color': '#fd7e14'}
-    }
-    
-    result_options = []
-    for result in df['Result'].unique():
-        marker_info = result_markers.get(result, {'symbol': '●', 'color': '#6C757D'})
-        result_options.append({
-            'label': html.Span([
-                html.Span(marker_info['symbol'], 
-                         style={'color': marker_info['color'], 'fontSize': '14px', 'marginRight': '8px', 'fontWeight': 'bold'}),
-                result
-            ], style={'display': 'flex', 'alignItems': 'center'}),
-            'value': result
-        })
-    return result_options
+STROKE_OPTIONS = df[~df['Stroke'].isin(['Feed','Serve'])]['Stroke'].unique().tolist()
+RESULT_OPTIONS = df[~df['Stroke'].isin(['Feed','Serve'])]['Result'].unique().tolist()
 
 def layout(): 
     return dbc.Container([
@@ -100,8 +56,8 @@ def layout():
                             html.Label("Stroke Types", className="form-label text-muted mb-2", style={'fontSize': '14px', 'fontWeight': '600'}),
                             dbc.Checklist(
                                 id='stroke-dropdown',
-                                options=create_stroke_checklist(),
-                                value=df['Stroke'].unique().tolist(),
+                                options=STROKE_OPTIONS,
+                                value=STROKE_OPTIONS,
                                 inline=True,
                                 className="mb-3"
                             )
@@ -114,8 +70,8 @@ def layout():
                             html.Label("Shot Results", className="form-label text-muted mb-2", style={'fontSize': '14px', 'fontWeight': '600'}),
                             dbc.Checklist(
                                 id='result-filter',
-                                options=create_result_checklist(),
-                                value=df['Result'].unique().tolist(),
+                                options=RESULT_OPTIONS,
+                                value=RESULT_OPTIONS,
                                 inline=True,
                                 className="mb-3"
                             )
@@ -182,10 +138,6 @@ def layout():
                 ])
             ], md=6)
         ]),
-        
-        # Hidden components to maintain compatibility
-            dcc.Store(id='shot-type-dropdown', data='all'),  # Hidden store for shot type (always 'all')
-            dcc.Store(id='color-by', data='Stroke'),  # Hidden store for color by (always 'Stroke')
-            dcc.Store(id='player-store')
+        dcc.Store(id='player-store')
         
     ], fluid=True, className="px-4 py-3")
