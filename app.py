@@ -13,7 +13,7 @@ app.layout = html.Div(
         dbc.Container(
             [
                 dash.page_container,
-            ],fluid=True,className='main-content',style={'background-color':'#F8F9FA'}
+            ],fluid=True,style={'background-color':'#F8F9FA'}
         )
     ]
 )

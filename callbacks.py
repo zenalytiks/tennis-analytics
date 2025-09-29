@@ -1,7 +1,7 @@
 from dash import Input, Output, callback, callback_context
 import plotly.graph_objects as go
 import plotly.express as px
-from utils.graphs import create_tennis_court_shapes, add_shot_data, create_placement_analysis, create_speed_analysis, COURT_LENGTH, COURT_WIDTH
+from utils.graphs import create_tennis_court_shapes, add_shot_data, create_placement_analysis, create_speed_analysis, COURT_LENGTH
 from utils.data_reader import read_data
 
 df = read_data()
@@ -49,18 +49,20 @@ def update_player_click(n_click_player_1, n_click_player_2, player1, player2):
     [
      Input('stroke-dropdown', 'value'),
      Input('result-filter', 'value'),
-     Input('player-store','data')],
+     Input('spin-filter', 'value'),
+     Input('player-store','data'),
+     Input('shot-spin-switch','value')],
      prevent_initial_call=True
 )
 # Replace this section in your callbacks.py update_charts function
 
-def update_charts(selected_strokes, selected_results, selected_player):
+def update_charts(selected_strokes, selected_results, selected_spins, selected_player, shot_spin_view):
     """
     Updated callback to handle single player perspective and modern UI controls
     """
     player_perspective = selected_player['player_perspective']
     # Filter data to show only the selected player's shots
-    filtered_df = df[(df['Player'] == player_perspective) & (~df['Stroke'].isin(['Feed','Serve']))].copy()
+    filtered_df = df[(df['Player'] == player_perspective) & (df['Spin'].isin(selected_spins))].copy()
 
     # PROPER PERSPECTIVE TRANSFORMATION
     # Transform coordinates to show receiving player's perspective
@@ -110,7 +112,7 @@ def update_charts(selected_strokes, selected_results, selected_player):
         height=600,
         margin=dict(l=0, r=0, t=0, b=0)
     ))
-    court_fig = add_shot_data(court_fig, filtered_df, df)
+    court_fig = add_shot_data(court_fig, filtered_df, shot_spin_view)
     
     # Create analysis charts
     depth_fig, direction_fig = create_placement_analysis(filtered_df)
@@ -170,30 +172,70 @@ def update_result_options(selected_results):
     
     # Result markers and colors
     result_markers = {
-        'In': {'symbol': '●', 'color': '#000'},
-        'Out': {'symbol': '✕', 'color': '#000'}, 
-        'Net': {'symbol': '▲', 'color': '#000'}
+        'In': {'symbol': '⚫', 'color': '#000'},
+        'Out': {'symbol': '⚪', 'color': '#000'},
     }
     
     options = []
-    for result in df['Result'].unique():
+    for result in df[~df['Result'].isin(['Net'])]['Result'].unique():
         marker_info = result_markers.get(result, {'symbol': '●', 'color': '#6C757D'})
         
         # Add checkmark for selected results
         if selected_results and result in selected_results:
             label = html.Span([
                 html.Span(marker_info['symbol'], 
-                         style={'color': marker_info['color'], 'fontSize': '14px', 'marginRight': '8px', 'fontWeight': 'bold'}),
+                         style={'color': marker_info['color'], 'fontSize': '20px', 'marginRight': '8px', 'fontWeight': 'bold'}),
                 result
             ], style={'display': 'flex', 'alignItems': 'center'})
         else:
             label = html.Span([
                 html.Span(marker_info['symbol'], 
-                         style={'color': marker_info['color'], 'fontSize': '14px', 'marginRight': '8px', 
+                         style={'color': marker_info['color'], 'fontSize': '20px', 'marginRight': '8px', 
                                 'fontWeight': 'bold', 'opacity': '0.4'}),
                 result
             ], style={'display': 'flex', 'alignItems': 'center', 'opacity': '0.6'})
             
         options.append({'label': label, 'value': result})
     
+    return options
+
+
+@callback(
+    Output('spin-filter', 'options'),
+    Input('spin-filter', 'value')
+)
+def update_spin_options(selected_spins):
+    """
+    Update spin options with visual feedback and opacity changes
+    """
+    from dash import html
+    
+    # Spin markers and colors
+    spin_markers = {
+        'Topspin': {'symbol': '▲', 'color': '#000'},
+        'Slice': {'symbol': '◆', 'color': '#000'},
+        'Flat': {'symbol': '■', 'color': '#000'},
+    }
+    
+    options = []
+    for spin in df['Spin'].unique():
+        marker_info = spin_markers.get(spin, {'symbol': '●', 'color': '#6C757D'})
+
+        # Add checkmark for selected spins
+        if selected_spins and spin in selected_spins:
+            label = html.Span([
+                html.Span(marker_info['symbol'], 
+                         style={'color': marker_info['color'], 'fontSize': '20px', 'marginRight': '8px', 'fontWeight': 'bold'}),
+                spin
+            ], style={'display': 'flex', 'alignItems': 'center'})
+        else:
+            label = html.Span([
+                html.Span(marker_info['symbol'], 
+                         style={'color': marker_info['color'], 'fontSize': '20px', 'marginRight': '8px', 
+                                'fontWeight': 'bold', 'opacity': '0.4'}),
+                spin
+            ], style={'display': 'flex', 'alignItems': 'center', 'opacity': '0.6'})
+
+        options.append({'label': label, 'value': spin})
+
     return options

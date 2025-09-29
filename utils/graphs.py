@@ -119,7 +119,7 @@ def create_tennis_court_shapes():
     
     return shapes,annotations
 
-def add_shot_data(fig, filtered_df, df):
+def add_shot_data(fig, filtered_df, shot_spin_view):
     if filtered_df.empty:
         return fig
 
@@ -135,14 +135,28 @@ def add_shot_data(fig, filtered_df, df):
         
         # Plot ALL shots regardless of position
         marker_size = max(8, min(20, row['Speed (MPH)'] / 3))
+        marker_color = 'gray'
+        line_color = 'gray'
+        marker_symbol = 'circle'  # Default circle
         
         # Determine marker symbol based on result
         if row['Result'] == 'In':
-            marker_symbol = 'circle'
+            marker_color = row['color']
+            line_color = 'white'
         elif row['Result'] == 'Out':
-            marker_symbol = 'x'
+            marker_color = 'white'
+            line_color = row['color']
         else:  # Net
-            marker_symbol = 'triangle-up'
+            marker_color = 'white'
+            line_color = row['color']
+
+        if shot_spin_view:
+            if row['Spin'] == 'Topspin':
+                marker_symbol = 'triangle-up'  # Upward triangle
+            elif row['Spin'] == 'Flat':
+                marker_symbol = 'square'  # Square
+            elif row['Spin'] == 'Slice':
+                marker_symbol = 'diamond'  # Downward triangle
         
         # Add trace for this shot
         fig.add_trace(go.Scatter(
@@ -152,8 +166,8 @@ def add_shot_data(fig, filtered_df, df):
             marker=dict(
                 size=marker_size,
                 symbol=marker_symbol,
-                color=row['color'],
-                line=dict(width=2, color='white'),
+                color=marker_color,
+                line=dict(width=2, color=line_color),
                 opacity=0.8
             ),
             name=f"{row['Stroke']} - {row['Direction']}",

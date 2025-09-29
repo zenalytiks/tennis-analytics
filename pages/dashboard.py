@@ -9,6 +9,7 @@ df = read_data()
 
 STROKE_OPTIONS = df[~df['Stroke'].isin(['Feed','Serve'])]['Stroke'].unique().tolist()
 RESULT_OPTIONS = df[~df['Stroke'].isin(['Feed','Serve'])]['Result'].unique().tolist()
+SPIN_OPTIONS = df[~df['Stroke'].isin(['Feed','Serve'])]['Spin'].unique().tolist()
 
 def layout(): 
     return dbc.Container([
@@ -66,16 +67,45 @@ def layout():
                         html.Hr(className="my-3"),
                         
                         # Shot Result Selection
-                        html.Div([
-                            html.Label("Shot Results", className="form-label text-muted mb-2", style={'fontSize': '14px', 'fontWeight': '600'}),
-                            dbc.Checklist(
-                                id='result-filter',
-                                options=RESULT_OPTIONS,
-                                value=RESULT_OPTIONS,
-                                inline=True,
-                                className="mb-3"
-                            )
-                        ]),
+                        dbc.Stack(
+                            [
+                                html.Div([
+                                    html.Label("Shot Results", className="form-label text-muted mb-2", style={'fontSize': '14px', 'fontWeight': '600'}),
+                                    dbc.Checklist(
+                                        id='result-filter',
+                                        options=RESULT_OPTIONS,
+                                        value=RESULT_OPTIONS,
+                                        inline=True,
+                                        className="mb-3"
+                                    )
+                                ]),
+        
+                                html.Div([
+                                    dbc.Stack(
+                                        [
+                                            html.Label("Shot Spin", className="form-label text-muted mb-2", style={'fontSize': '14px', 'fontWeight': '600'}),
+                                            dbc.Switch(
+                                                id="shot-spin-switch",
+                                                value=False,
+                                                className="ms-auto",
+                                            ),
+                                        ],
+                                        direction="horizontal",
+                                    ),
+                                    
+                                    dbc.Checklist(
+                                        id='spin-filter',
+                                        options=SPIN_OPTIONS,
+                                        value=SPIN_OPTIONS,
+                                        inline=True,
+                                        className="mb-3"
+                                    )
+                                ]),
+                            ],
+                            direction="horizontal",
+                            gap=5
+                        ),
+                        
                         
                         html.Hr(className="my-3"),
         
@@ -88,7 +118,7 @@ def layout():
                                 html.Br(), 
                                 "• Colors represent stroke types",
                                 html.Br(),
-                                "• Markers show shot results"
+                                "• Markers shapes show shot results and spins"
                             ], className="text-muted", style={'lineHeight': '1.4'})
                         ], className="mt-3 p-2 bg-light rounded")
                     ], className="p-2")

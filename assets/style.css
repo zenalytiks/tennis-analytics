@@ -10,7 +10,7 @@
     width: 50px;
 }
 
-.form-check-input {
+.form-check-inline .form-check-input {
     display: none;
 }
 
